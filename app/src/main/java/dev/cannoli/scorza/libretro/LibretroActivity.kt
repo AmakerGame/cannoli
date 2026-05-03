@@ -142,7 +142,6 @@ class LibretroActivity : ComponentActivity() {
     private var shaderParamsDirty = false
     private var lastShaderCycleMs = 0L
     private var platformBaseline: OverrideManager.Settings? = null
-    private val navInputHandler = dev.cannoli.scorza.input.InputHandler()
 
     private var diskCount by mutableIntStateOf(0)
     private var currentDiskIndex by mutableIntStateOf(0)
@@ -322,9 +321,6 @@ class LibretroActivity : ComponentActivity() {
         sessionLog.log("device GLES: 0x${Integer.toHexString(reqGlEs)} (${glEsMajor}.${glEsMinor}) es3Supported=$es3Supported")
         confirmButton = activeMappingHolder.active.value.confirmButton()
         buttonLabelSet = activeMappingHolder.active.value.labelSet(dev.cannoli.ui.ButtonLabelSet.PLUMBER)
-        // Keep legacy IGM/gameplay InputHandler's confirm/back convention in sync with the user's
-        // global preference. Phase 2c will replace the legacy InputHandler entirely.
-        navInputHandler.swapConfirmBack = activeMappingHolder.active.value?.menuConfirm == dev.cannoli.scorza.input.v2.CanonicalButton.BTN_EAST
         isRunning = true
         window.setBackgroundDrawableResource(android.R.color.black)
         goFullscreen()
@@ -911,13 +907,13 @@ class LibretroActivity : ComponentActivity() {
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (missingBios.isNotEmpty()) {
-            if (resolveNavButton(keyCode) == "btn_east") finish()
+            if (resolveNavButton(keyCode, event.deviceId) == "btn_east") finish()
             return true
         }
         if (loading) return true
         if (isSystemMediaKey(keyCode)) return super.onKeyDown(keyCode, event)
         val screen = currentScreen ?: return handleGameplayInput(keyCode, event)
-        val button = resolveNavButton(keyCode)
+        val button = resolveNavButton(keyCode, event.deviceId)
         return when (screen) {
             is IGMScreen.Menu -> handleMenuInput(screen, button)
             is IGMScreen.Settings -> handleCategoryInput(screen, button)
@@ -953,13 +949,13 @@ class LibretroActivity : ComponentActivity() {
         if (screenStack.isNotEmpty()) {
             val cs = currentScreen
             if (cs is IGMScreen.Guide) {
-                when (resolveNavButton(keyCode)) {
+                when (resolveNavButton(keyCode, event.deviceId)) {
                     "btn_up", "btn_down" -> guideScrollDir = 0
                     "btn_left", "btn_right" -> guideScrollXDir = 0
                 }
             }
             if (cs is IGMScreen.Info) {
-                when (resolveNavButton(keyCode)) {
+                when (resolveNavButton(keyCode, event.deviceId)) {
                     "btn_up", "btn_down" -> infoScrollDir = 0
                 }
             }
@@ -1000,12 +996,18 @@ class LibretroActivity : ComponentActivity() {
         else -> false
     }
 
-    private fun resolveNavButton(keyCode: Int): String? {
+    private fun resolveNavButton(keyCode: Int, deviceId: Int): String? {
         when (keyCode) {
             KeyEvent.KEYCODE_BACK -> return "btn_east"
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> return "btn_south"
         }
-        val pref = navInputHandler.resolveButton(keyCode) ?: return null
+        val mapping = portRouter.mappingFor(deviceId) ?: activeMappingHolder.active.value
+        val canonical = mapping?.bindings?.entries?.firstOrNull { (_, bindings) ->
+            bindings.any { it is dev.cannoli.scorza.input.v2.InputBinding.Button && it.keyCode == keyCode }
+        }?.key
+        val pref = canonical?.let { canonicalToNavName(it) }
+            ?: dev.cannoli.scorza.input.InputHandler.DEFAULT_KEY_MAP[keyCode]
+            ?: return null
         return if (confirmButton == dev.cannoli.ui.ConfirmButton.EAST) {
             when (pref) {
                 "btn_south" -> "btn_east"
@@ -1013,6 +1015,26 @@ class LibretroActivity : ComponentActivity() {
                 else -> pref
             }
         } else pref
+    }
+
+    private fun canonicalToNavName(c: dev.cannoli.scorza.input.v2.CanonicalButton): String = when (c) {
+        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH -> "btn_south"
+        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_EAST -> "btn_east"
+        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_WEST -> "btn_west"
+        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_NORTH -> "btn_north"
+        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_UP -> "btn_up"
+        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_DOWN -> "btn_down"
+        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_LEFT -> "btn_left"
+        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_RIGHT -> "btn_right"
+        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_L -> "btn_l"
+        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_R -> "btn_r"
+        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_L2 -> "btn_l2"
+        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_R2 -> "btn_r2"
+        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_L3 -> "btn_l3"
+        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_R3 -> "btn_r3"
+        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_START -> "btn_start"
+        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SELECT -> "btn_select"
+        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_MENU -> "btn_menu"
     }
 
     private fun isSyntheticTriggerHeld(deviceId: Int, keyCode: Int): Boolean = when (keyCode) {
