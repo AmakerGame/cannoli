@@ -657,8 +657,6 @@ class MainActivity : ComponentActivity(), ActivityActions {
         dev.cannoli.scorza.util.DebugLog.init(root.absolutePath)
         dev.cannoli.scorza.util.ScanLog.init(root.absolutePath)
         dev.cannoli.scorza.util.InputLog.init(root.absolutePath)
-        // Re-load now that storage permission is in hand. The DI-time load() degrades to bundled
-        // asset defaults if the user override INI couldn't be read (no permission yet).
         platformConfig.load()
         launchManager.syncRetroArchAssets(root)
         launchManager.syncRetroArchConfig(root)

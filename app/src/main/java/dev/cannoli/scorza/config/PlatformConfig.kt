@@ -42,6 +42,12 @@ class PlatformConfig(
     private var defaultApps = mapOf<String, List<AppConfig>>()
     private var arcadePlatforms = setOf<String>()
 
+    init {
+        // Bundled asset defaults are always available regardless of storage permission, so seed
+        // them at construction. load() will be called after permission to overlay user INI.
+        loadPlatformsAsset()
+    }
+
     private fun loadPlatformsAsset() {
         val json = JSONObject(assets.open("platforms.json").use { it.bufferedReader().readText() })
         val cores = mutableMapOf<String, String>()
@@ -101,22 +107,11 @@ class PlatformConfig(
     fun load() {
         loadPlatformsAsset()
         val configFile = paths.platformsIni
-        try {
-            if (!configFile.exists()) {
-                writeDefaultIni(configFile)
-            }
-            ini = IniParser.parse(configFile)
-        } catch (_: java.io.IOException) {
-            // Storage permission likely not yet granted (EACCES on shared storage). Stick with
-            // the bundled asset defaults; MainActivity calls load() again after permission grant.
-        } catch (_: SecurityException) {
-            // Same as above on stricter platforms.
+        if (!configFile.exists()) {
+            writeDefaultIni(configFile)
         }
-        try {
-            loadCoreMappings()
-        } catch (_: java.io.IOException) {
-        } catch (_: SecurityException) {
-        }
+        ini = IniParser.parse(configFile)
+        loadCoreMappings()
     }
 
     private fun loadCoreMappings() {

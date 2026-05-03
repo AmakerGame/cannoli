@@ -11,9 +11,9 @@ class CannoliDatabase(cannoliRoot: File) {
     private val dbPath: String = CannoliPaths(cannoliRoot).database.absolutePath
     private val dbDir: File? = CannoliPaths(cannoliRoot).database.parentFile
 
-    // Open lazily so DI can construct the database singleton before storage permission has
-    // been granted. The actual SQLite open / migration runs on first access, which only
-    // happens after MainActivity.initializeApp() has confirmed permission.
+    // Open on first access. Hilt eagerly resolves @Singleton injects at MainActivity onCreate,
+    // which is before the user clears the permission gate, so deferring the SQLite open keeps
+    // construction free of file I/O.
     val conn: SQLiteConnection by lazy {
         dbDir?.mkdirs()
         val c = BundledSQLiteDriver().open(dbPath)

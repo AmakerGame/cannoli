@@ -36,8 +36,6 @@ object ScanModule {
     ): PlatformConfig {
         val root = File(settings.sdCardRoot)
         val bundledCoresDir = LaunchManager.extractBundledCores(context)
-        val config = PlatformConfig(root, context.assets, coreInfo, bundledCoresDir)
-        config.load()
-        return config
+        return PlatformConfig(root, context.assets, coreInfo, bundledCoresDir)
     }
 }
