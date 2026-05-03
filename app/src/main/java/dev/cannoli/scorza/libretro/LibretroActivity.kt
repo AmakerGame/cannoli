@@ -973,7 +973,6 @@ class LibretroActivity : ComponentActivity() {
             return true
         }
         val port = portRouter.portFor(event.deviceId) ?: 0
-        if (isSyntheticTriggerHeld(event.deviceId, keyCode)) return true
         val portKeys = portPressedKeys[port]
         portKeys.remove(keyCode)
         portConsumedKeys[port].remove(keyCode)
@@ -986,6 +985,9 @@ class LibretroActivity : ComponentActivity() {
             }
         }
 
+        // The evaluator's Button asserter for this keycode releases here; if an Axis
+        // asserter is still tracking the canonical, BTN_* stays in currentlyPressed via
+        // that source and the libretro mask doesn't drop until the axis comes back to rest.
         val evaluator = evaluatorForPort(port) ?: return super.onKeyUp(keyCode, event)
         if (!evaluator.keyCodeIsBound(keyCode)) return super.onKeyUp(keyCode, event)
         evaluator.evaluateKeyUp(keyCode)
@@ -1047,11 +1049,6 @@ class LibretroActivity : ComponentActivity() {
         dev.cannoli.scorza.input.v2.CanonicalButton.BTN_MENU -> "btn_menu"
     }
 
-    private fun isSyntheticTriggerHeld(deviceId: Int, keyCode: Int): Boolean = when (keyCode) {
-        KeyEvent.KEYCODE_BUTTON_L2 -> deviceId in triggerL2HeldDevices
-        KeyEvent.KEYCODE_BUTTON_R2 -> deviceId in triggerR2HeldDevices
-        else -> false
-    }
 
     private fun syncSyntheticTrigger(
         deviceId: Int,
@@ -1093,7 +1090,11 @@ class LibretroActivity : ComponentActivity() {
                 keyCode == KeyEvent.KEYCODE_BUTTON_MODE
         )
         if (opensMenu || isUnboundMenuKey) { openMenu(); return true }
-        if (isSyntheticTriggerHeld(event.deviceId, keyCode)) return true
+        // Don't early-return on synthetic-trigger held: portPressedKeys.add already dedupes for
+        // chord detection, and on devices whose trigger axis rests at 0 the mapping importer
+        // normalizes it to 0.5 -- past the press threshold but never below the release
+        // threshold, so triggerR2HeldDevices stays populated forever and a real button press
+        // would silently no-op.
         val portKeys = portPressedKeys[port]
         val isNewPress = portKeys.add(keyCode)
         if (isNewPress) checkShortcuts(port)
