@@ -1102,12 +1102,7 @@ class LibretroActivity : ComponentActivity() {
         val mapsToCanonical = evaluator?.keyCodeIsBound(keyCode) == true
         val opensMenu = mapping?.bindings?.get(dev.cannoli.scorza.input.v2.CanonicalButton.BTN_MENU)
             ?.any { it is dev.cannoli.scorza.input.v2.InputBinding.Button && it.keyCode == keyCode } == true
-        val isUnboundMenuKey = !mapsToCanonical && (
-            keyCode == KeyEvent.KEYCODE_MENU ||
-                keyCode == KeyEvent.KEYCODE_BACK ||
-                keyCode == KeyEvent.KEYCODE_BUTTON_MODE
-        )
-        if (opensMenu || isUnboundMenuKey) { openMenu(); return true }
+        if (opensMenu) { openMenu(); return true }
         // Don't early-return on synthetic-trigger held: portPressedKeys.add already dedupes for
         // chord detection, and on devices whose trigger axis rests at 0 the mapping importer
         // normalizes it to 0.5 -- past the press threshold but never below the release
