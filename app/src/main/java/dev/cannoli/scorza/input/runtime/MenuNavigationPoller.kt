@@ -40,7 +40,15 @@ class MenuNavigationPoller @Inject constructor(
                 fire(current)
                 nextFireAt = now + REPEAT_INTERVAL_MS
             }
-            handler.postDelayed(this, POLL_INTERVAL_MS)
+            // Wake just before the next fire if a direction is held; otherwise idle-poll. This
+            // keeps auto-repeat cadence within a few ms of the configured interval instead of
+            // letting the 33ms poll tick introduce up to a full poll of jitter per fire.
+            val next = if (heldDir != null) {
+                (nextFireAt - now).coerceIn(1L, POLL_INTERVAL_MS)
+            } else {
+                POLL_INTERVAL_MS
+            }
+            handler.postDelayed(this, next)
         }
     }
 
