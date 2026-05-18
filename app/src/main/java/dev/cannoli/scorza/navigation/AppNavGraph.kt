@@ -208,11 +208,6 @@ sealed class LauncherScreen {
             return copy(volumeIndex = next, customPath = null)
         }
     }
-    data class Housekeeping(
-        val kind: dev.cannoli.scorza.ui.screens.HousekeepingKind,
-        val progress: Float = 0f,
-        val statusLabel: String = "",
-    ) : LauncherScreen()
 }
 
 @Composable
@@ -786,14 +781,6 @@ fun AppNavGraph(
                     )
                 }
             }
-            is LauncherScreen.Housekeeping -> {
-                inputRouter?.let { dev.cannoli.scorza.input.screen.compose.ScreenInput(it.onboardingHandler) }
-                dev.cannoli.scorza.ui.screens.HousekeepingScreen(
-                    kind = currentScreen.kind,
-                    progress = currentScreen.progress,
-                    statusLabel = currentScreen.statusLabel,
-                )
-            }
             is LauncherScreen.Credits -> {
                 if (inputRouter != null) {
                     val handler = remember { inputRouter.currentHandler() }
@@ -929,7 +916,6 @@ fun AppNavGraph(
                 || dialog is KeyboardInputState
         val hideForScreen = currentScreen is LauncherScreen.Credits
                 || currentScreen is LauncherScreen.DirectoryBrowser
-                || currentScreen is LauncherScreen.Housekeeping
                 || currentScreen is LauncherScreen.InputTester
                 || currentScreen is LauncherScreen.OnboardingPermissions
                 || (currentScreen is LauncherScreen.SystemList && systemListState?.isLoading == true)

@@ -220,21 +220,7 @@ class MainActivity : ComponentActivity(), ActivityActions {
                             }
                             ReadyNavGraph()
                         }
-                        is BootState.Initializing -> {
-                            val kind = when (s.phase) {
-                                dev.cannoli.scorza.boot.BootPhase.IMPORT ->
-                                    dev.cannoli.scorza.ui.screens.HousekeepingKind.DATABASE_MIGRATION
-                                dev.cannoli.scorza.boot.BootPhase.INITIAL_SCAN ->
-                                    dev.cannoli.scorza.ui.screens.HousekeepingKind.INITIAL_SCAN
-                                dev.cannoli.scorza.boot.BootPhase.LIBRARY_REFRESH ->
-                                    dev.cannoli.scorza.ui.screens.HousekeepingKind.LIBRARY_REFRESH
-                            }
-                            dev.cannoli.scorza.ui.screens.HousekeepingScreen(
-                                kind = kind,
-                                progress = s.progress,
-                                statusLabel = s.label,
-                            )
-                        }
+                        is BootState.Initializing -> Box(modifier = Modifier.fillMaxSize()) {}
                         is BootState.Error -> BootErrorScreen(message = s.message)
                         is BootState.Ready -> ReadyNavGraph()
                     }
