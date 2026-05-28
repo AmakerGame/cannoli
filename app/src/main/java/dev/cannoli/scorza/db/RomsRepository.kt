@@ -130,7 +130,7 @@ class RomsRepository(
             platformTag = platformTag,
             displayName = stmt.getText(3),
             tags = if (stmt.isNull(4)) null else stmt.getText(4),
-            artFile = artwork.find(platformTag, absoluteFile.nameWithoutExtension),
+            artFile = artwork.find(platformTag, absoluteFile),
             launchTarget = LaunchTarget.RetroArch,
             discFiles = discPaths?.map { File(romDirectory, it) },
             raGameId = if (stmt.isNull(6)) null else stmt.getLong(6).toInt(),
