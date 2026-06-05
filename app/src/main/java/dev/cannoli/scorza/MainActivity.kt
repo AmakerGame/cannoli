@@ -140,6 +140,7 @@ class MainActivity : ComponentActivity(), ActivityActions {
         dev.cannoli.scorza.util.LoggingPrefs.romScan = settings.loggingRomScan
         dev.cannoli.scorza.util.LoggingPrefs.input = settings.loggingInput
         dev.cannoli.scorza.util.LoggingPrefs.session = settings.loggingSession
+        dev.cannoli.scorza.util.LoggingPrefs.storage = settings.loggingStorage
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

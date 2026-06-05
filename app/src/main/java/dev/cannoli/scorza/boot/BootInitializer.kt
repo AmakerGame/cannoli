@@ -22,10 +22,12 @@ import dev.cannoli.scorza.navigation.LauncherScreen
 import dev.cannoli.scorza.navigation.NavigationController
 import dev.cannoli.scorza.settings.ContentMode
 import dev.cannoli.scorza.settings.SettingsRepository
+import dev.cannoli.scorza.setup.SetupCoordinator
 import dev.cannoli.scorza.ui.viewmodel.GameListViewModel
 import dev.cannoli.scorza.ui.viewmodel.SettingsViewModel
 import dev.cannoli.scorza.updater.UpdateManager
 import dev.cannoli.scorza.util.ScanLog
+import dev.cannoli.scorza.util.StorageLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -59,6 +61,7 @@ class BootInitializer @Inject constructor(
     private val romsRepository: RomsRepository,
     private val launchManager: LaunchManager,
     private val launcherActions: LauncherActions,
+    private val setupCoordinator: SetupCoordinator,
 ) {
 
     suspend fun run(onPhase: (BootPhase, Float, String) -> Unit): BootResult {
@@ -69,6 +72,8 @@ class BootInitializer @Inject constructor(
 
         ScanLog.init(root.absolutePath)
         dev.cannoli.scorza.util.InputLog.init(root.absolutePath)
+        StorageLog.init(root.absolutePath)
+        setupCoordinator.logStorageDiagnostics()
         platformConfig.load()
         ioScope.launch {
             launchManager.syncRetroArchAssets(root)
